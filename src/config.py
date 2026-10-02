@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,9 +13,10 @@ class Settings(BaseSettings):
 
     mlflow_tracking_uri: str = "http://localhost:5000"
 
-    forecast_steps: int = 48        # 4 hours at 5 minute intervals
-    seasonal_periods: int = 12      # 1 hour seasonality
-settings = Settings()
+    forecast_steps: int = 48
+    seasonal_periods: int = 12
 
 
-
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
