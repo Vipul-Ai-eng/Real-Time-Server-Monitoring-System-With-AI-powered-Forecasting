@@ -1,6 +1,0 @@
-pyproject.toml
-src/server_forecast_platform.egg-info/PKG-INFO
-src/server_forecast_platform.egg-info/SOURCES.txt
-src/server_forecast_platform.egg-info/dependency_links.txt
-src/server_forecast_platform.egg-info/requires.txt
-src/server_forecast_platform.egg-info/top_level.txt
