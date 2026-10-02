@@ -13,7 +13,5 @@ class Settings(BaseSettings):
 
     forecast_steps: int = 48        # 4 hours at 5 minute intervals
     seasonal_periods: int = 12      # 1 hour seasonality
-settings = Settings()
-
 
 
