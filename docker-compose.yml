@@ -48,6 +48,15 @@ services:
       - influxdb
     restart: unless-stopped
 
+  loadgen:
+    image: python:3.11-slim
+    container_name: loadgen
+    mem_limit: 800m
+    volumes:
+      - ./loadgen/gen.py:/app/gen.py:ro
+    command: python /app/gen.py
+    restart: unless-stopped
+
 volumes:
   prometheus-data:
   influxdb-data:
