@@ -24,6 +24,14 @@ def clean_series(raw: pd.Series, freq: str = "10s", max_gap_fill: int = 6) -> pd
     )
     return clean
 
+def latest_contiguous(series: pd.Series, freq: str = "10s") -> pd.Series:
+    """Return the most recent unbroken run of points, indexed at a fixed freq."""
+    if series.empty:
+        return series
+
+    gap = series.index.to_series().diff() > pd.Timedelta(freq)
+    start = gap[gap].index[-1] if gap.any() else series.index[0]
+    return series.loc[start:].asfreq(freq)
 
 def to_training_frame(series: pd.Series) -> pd.DataFrame:
     """Shape cleaned series into DataFrame our models expect"""

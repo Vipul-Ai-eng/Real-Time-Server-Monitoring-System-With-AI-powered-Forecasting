@@ -1,6 +1,6 @@
 import pandas as pd
 
-from src.pre_processing import clean_series, to_training_frame
+from src.pre_processing import clean_series, latest_contiguous, to_training_frame
 
 
 def test_resamples_onto_fixed_grid():
@@ -59,3 +59,13 @@ def test_training_frame_has_expected_shape():
     assert list(df.columns) == ["value"]
     assert df.index.name == "timestamp"
     assert len(df) == 3
+
+def test_latest_contiguous_drops_points_before_a_break():
+    first = pd.date_range("2026-01-01 00:00:00", periods=3, freq="10s")
+    second = pd.date_range("2026-01-01 00:10:00", periods=4, freq="10s")
+    s = pd.Series(range(7), index=first.append(second), dtype=float)
+
+    out = latest_contiguous(s, freq="10s")
+
+    assert len(out) == 4
+    assert out.index.freq is not None
