@@ -39,6 +39,14 @@ def to_training_frame(series: pd.Series) -> pd.DataFrame:
     df.index.name = "timestamp"
     return df
 
+def split_runs(series: pd.Series, freq: str = "10s", min_len: int = 1) -> list[pd.Series]:
+    """Split a series into unbroken runs, starting a new run after any gap."""
+    if series.empty:
+        return []
+
+    run_id = (series.index.to_series().diff() > pd.Timedelta(freq)).cumsum()
+    runs = [g.asfreq(freq) for _, g in series.groupby(run_id.values)]
+    return [r for r in runs if len(r) >= min_len]
 
 if __name__ == "__main__":
     from src.ingestion import fetch_metric_series

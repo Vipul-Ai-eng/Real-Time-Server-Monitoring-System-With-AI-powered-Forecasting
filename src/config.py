@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     forecast_steps: int = 48
     seasonal_periods: int = 12
-
+    data_start: str | None = None
 
 @lru_cache
 def get_settings() -> Settings:
