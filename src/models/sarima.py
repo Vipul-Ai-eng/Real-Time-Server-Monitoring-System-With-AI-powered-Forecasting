@@ -18,8 +18,8 @@ class SarimaForecaster(Forecaster):
             series,
             order=self.order,
             seasonal_order=self.seasonal_order,
-            enforce_stationarity=False,
-            enforce_invertibility=False, 
+            enforce_stationarity=True,
+            enforce_invertibility=True, 
         )
         self.fitted = model.fit(disp = False)
         log.info("sarima_fit_done", aic = round(self.fitted.aic, 2), n_points=len(series))

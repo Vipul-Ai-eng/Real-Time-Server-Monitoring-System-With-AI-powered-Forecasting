@@ -39,3 +39,12 @@ def test_predict_before_fit_raises():
     with pytest.raises(RuntimeError):
         model.predict(steps=5)
 
+def test_cycle_seasonality_tracks_a_known_wave():
+    s = _fake_series(300)
+    train, test = s.iloc[:288], s.iloc[288:]
+
+    model = ProphetForecaster(period_steps=12)
+    model.fit(train)
+    pred = model.predict(12)
+
+    assert np.abs(pred.values - test.values).mean() < 1.0

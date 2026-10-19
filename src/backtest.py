@@ -1,9 +1,19 @@
 import numpy as np
 import pandas as pd
 
+HORIZON = 12
+MIN_TRAIN = 60
+STEP = 12
 
-def rolling_backtest(series, make_model, horizon=12, min_train=60, step=12):
-    """Score a model on successive windows, each trained only on earlier data"""
+
+def rolling_backtest(
+    series, make_model, horizon=HORIZON, min_train=MIN_TRAIN, step=STEP, period=None
+):
+    """Score a model on successive windows, each trained only on earlier data.
+
+    With `period` set, also scores a seasonal-naive baseline that repeats the
+    last full cycle of the training data.
+    """
     rows = []
     end = min_train
     while end + horizon <= len(series):
@@ -14,27 +24,45 @@ def rolling_backtest(series, make_model, horizon=12, min_train=60, step=12):
         model.fit(train)
         pred = model.predict(horizon)
 
+        snaive_mae = np.nan
+        if period:
+            cycle = np.resize(train.values[-period:], horizon)
+            snaive_mae = np.abs(test.values - cycle).mean()
+
         rows.append(
             {
                 "end": train.index[-1],
                 "mae": np.abs(test.values - pred.values).mean(),
                 "naive_mae": np.abs(test.values - train.iloc[-1]).mean(),
+                "snaive_mae": snaive_mae,
             }
         )
         end += step
     return pd.DataFrame(rows)
 
 
-def score(results):
-    """total model error over total naive error. Below 1.0 beats repeat last value"""
+def score(results, base="naive_mae"):
+    """Total model error over total baseline error. Below 1.0 beats the baseline."""
     if results.empty:
         return float("nan")
-    return results["mae"].sum() / results["naive_mae"].sum()
+    return results["mae"].sum() / results[base].sum()
 
-def backtest_runs(runs, make_model, horizon=12, min_train=60, step=12):
-    """Backtest each run separately and stack the results"""
-    parts = [rolling_backtest(r, make_model, horizon, min_train, step) for r in runs]
+
+def median_ratio(results, base="naive_mae"):
+    """Median per-window error over baseline error, robust to a few bad fits."""
+    if results.empty:
+        return float("nan")
+    return (results["mae"] / results[base]).median()
+
+
+def backtest_runs(
+    runs, make_model, horizon=HORIZON, min_train=MIN_TRAIN, step=STEP, period=None
+):
+    """Backtest each run separately and stack the results."""
+    parts = [
+        rolling_backtest(r, make_model, horizon, min_train, step, period) for r in runs
+    ]
     parts = [p for p in parts if not p.empty]
     if not parts:
-        return pd.DataFrame(columns=["end", "mae", "naive_mae"])
+        return pd.DataFrame(columns=["end", "mae", "naive_mae", "snaive_mae"])
     return pd.concat(parts, ignore_index=True)

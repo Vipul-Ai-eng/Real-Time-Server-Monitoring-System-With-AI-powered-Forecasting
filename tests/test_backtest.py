@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.backtest import backtest_runs, rolling_backtest, score
+from src.backtest import backtest_runs, median_ratio, rolling_backtest, score
 from src.models.base import Forecaster
 
 
@@ -46,3 +46,18 @@ def test_backtest_runs_never_crosses_a_gap():
     res = backtest_runs([long_run, short_run], RepeatLast)
 
     assert len(res) == 3
+
+def test_median_ratio_ignores_one_blowup():
+    res = pd.DataFrame(
+        {"mae": [1.0, 1.0, 1e9], "naive_mae": [2.0, 2.0, 2.0]}
+    )
+    assert median_ratio(res) == pytest.approx(0.5)
+    assert score(res) > 1e8
+
+def test_seasonal_naive_is_exact_on_a_periodic_series():
+    idx = pd.date_range("2026-01-01", periods=120, freq="10s")
+    s = pd.Series(np.sin(2 * np.pi * np.arange(120) / 12), index=idx)
+
+    res = rolling_backtest(s, RepeatLast, period=12)
+
+    assert res["snaive_mae"].max() < 1e-9
