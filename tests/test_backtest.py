@@ -8,6 +8,7 @@ from src.backtest import (
     ratio_interval,
     rolling_backtest,
     score,
+    since,
     win_rate,
 )
 from src.models.base import Forecaster
@@ -68,7 +69,7 @@ def test_seasonal_naive_is_exact_on_a_periodic_series():
     res = rolling_backtest(s, RepeatLast, period=12)
 
     assert res["snaive_mae"].max() < 1e-9
-    
+
 def test_win_rate_counts_windows_below_baseline():
     res = pd.DataFrame({"mae": [1.0, 3.0, 1.0, 1.0], "snaive_mae": [2.0, 2.0, 2.0, 2.0]})
     assert win_rate(res) == 0.75
@@ -79,3 +80,12 @@ def test_interval_collapses_when_every_window_is_identical():
     lo, hi = ratio_interval(res)
     assert lo == pytest.approx(0.5)
     assert hi == pytest.approx(0.5)
+
+def test_since_keeps_only_later_windows():
+    ends = pd.date_range("2026-01-01", periods=4, freq="1h", tz="UTC")
+    res = pd.DataFrame(
+        {"end": ends, "mae": [1.0] * 4, "naive_mae": [1.0] * 4, "snaive_mae": [1.0] * 4}
+    )
+
+    assert len(since(res, "2026-01-01T02:00:00Z")) == 2
+    assert since(res, None) is res

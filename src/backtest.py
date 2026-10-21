@@ -83,3 +83,9 @@ def ratio_interval(results, base="snaive_mae", n=2000, seed=0):
     pick = rng.integers(0, len(m), size=(n, len(m)))
     lo, hi = np.percentile(m[pick].sum(axis=1) / b[pick].sum(axis=1), [5, 95])
     return float(lo), float(hi)
+
+def since(results, start):
+    """Keep windows whose training data ends at or after start"""
+    if start is None or results.empty:
+        return results
+    return results[results["end"] >= pd.Timestamp(start)].reset_index(drop=True)

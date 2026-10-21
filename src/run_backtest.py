@@ -7,6 +7,7 @@ from src.backtest import (
     median_ratio,
     ratio_interval,
     score,
+    since,
     win_rate,
 )
 from src.config import get_settings
@@ -35,8 +36,12 @@ models = {
         "lstm": lambda: LSTMForecaster(horizon=HORIZON)
 }
 
+res = None
 for name, make in models.items():
-    res = backtest_runs(runs, make, period=cfg.seasonal_periods)
+    res = since(backtest_runs(runs, make, period=cfg.seasonal_periods), cfg.eval_start)
+    if res.empty:
+        print(f"{name}: no windows after EVAL_START yet")
+        continue
     lo, hi = ratio_interval(res)
     print(
         f"{name}: {len(res)} windows, {score(res, 'snaive_mae'):.2f}x seasonal "
@@ -44,4 +49,5 @@ for name, make in models.items():
         f"beats it in {win_rate(res):.0%}"
     )
 
-print(f"seasonal-naive itself: {res['snaive_mae'].sum() / res['naive_mae'].sum():.2f}x naive")
+if res is not None and not res.empty:
+    print(f"seasonal-naive itself: {res['snaive_mae'].sum() / res['naive_mae'].sum():.2f}x naive")
