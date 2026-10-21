@@ -2,7 +2,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.backtest import backtest_runs, median_ratio, rolling_backtest, score
+from src.backtest import (
+    backtest_runs,
+    median_ratio,
+    ratio_interval,
+    rolling_backtest,
+    score,
+    win_rate,
+)
 from src.models.base import Forecaster
 
 
@@ -61,3 +68,14 @@ def test_seasonal_naive_is_exact_on_a_periodic_series():
     res = rolling_backtest(s, RepeatLast, period=12)
 
     assert res["snaive_mae"].max() < 1e-9
+    
+def test_win_rate_counts_windows_below_baseline():
+    res = pd.DataFrame({"mae": [1.0, 3.0, 1.0, 1.0], "snaive_mae": [2.0, 2.0, 2.0, 2.0]})
+    assert win_rate(res) == 0.75
+
+
+def test_interval_collapses_when_every_window_is_identical():
+    res = pd.DataFrame({"mae": [1.0] * 40, "snaive_mae": [2.0] * 40})
+    lo, hi = ratio_interval(res)
+    assert lo == pytest.approx(0.5)
+    assert hi == pytest.approx(0.5)

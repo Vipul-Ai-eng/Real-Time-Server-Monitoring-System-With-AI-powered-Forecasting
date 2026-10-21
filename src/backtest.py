@@ -66,3 +66,20 @@ def backtest_runs(
     if not parts:
         return pd.DataFrame(columns=["end", "mae", "naive_mae", "snaive_mae"])
     return pd.concat(parts, ignore_index=True)
+
+def win_rate(results, base="snaive_mae"):
+    """Share of windows where the model error is below the baseline"""
+    if results.empty:
+        return float("nan")
+    return float((results["mae"] < results[base]).mean())
+
+def ratio_interval(results, base="snaive_mae", n=2000, seed=0):
+    """Bootstrap 90% interval for total model error over total baseline error"""
+    if results.empty:
+        return float("nan"), float("nan")
+    rng = np.random.default_rng(seed)
+    m = results["mae"].to_numpy()
+    b = results[base].to_numpy()
+    pick = rng.integers(0, len(m), size=(n, len(m)))
+    lo, hi = np.percentile(m[pick].sum(axis=1) / b[pick].sum(axis=1), [5, 95])
+    return float(lo), float(hi)

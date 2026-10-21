@@ -1,9 +1,18 @@
 import pandas as pd
 
-from src.backtest import HORIZON, MIN_TRAIN, backtest_runs, median_ratio, score
+from src.backtest import (
+    HORIZON,
+    MIN_TRAIN,
+    backtest_runs,
+    median_ratio,
+    ratio_interval,
+    score,
+    win_rate,
+)
 from src.config import get_settings
 from src.ingestion import fetch_metric_series
 from src.logging_config import configure_logging
+from src.models.lstm import LSTMForecaster
 from src.models.prophet_model import ProphetForecaster
 from src.models.sarima import SarimaForecaster
 from src.pre_processing import clean_series, split_runs
@@ -23,14 +32,16 @@ models = {
     "sarima": lambda: SarimaForecaster(seasonal_periods=cfg.seasonal_periods),
     "prophet": ProphetForecaster,
     "prophet+cycle": lambda: ProphetForecaster(period_steps=cfg.seasonal_periods),
+        "lstm": lambda: LSTMForecaster(horizon=HORIZON)
 }
 
 for name, make in models.items():
     res = backtest_runs(runs, make, period=cfg.seasonal_periods)
+    lo, hi = ratio_interval(res)
     print(
-        f"{name}: {len(res)} windows, "
-        f"{score(res):.2f}x naive, {score(res, 'snaive_mae'):.2f}x seasonal-naive, "
-        f"{median_ratio(res, 'snaive_mae'):.2f}x median vs seasonal"
+        f"{name}: {len(res)} windows, {score(res, 'snaive_mae'):.2f}x seasonal "
+        f"[{lo:.2f}, {hi:.2f}], median {median_ratio(res, 'snaive_mae'):.2f}x, "
+        f"beats it in {win_rate(res):.0%}"
     )
 
 print(f"seasonal-naive itself: {res['snaive_mae'].sum() / res['naive_mae'].sum():.2f}x naive")
