@@ -13,7 +13,8 @@ dependencies = [
     "plotly>=5.20",
     "pydantic-settings>=2.2",
     "structlog>=24.1",
-    "prophet>=1.1.5"
+    "prophet>=1.1.5",
+    "torch>=2.2"
 ]
 
 [project.optional-dependencies]

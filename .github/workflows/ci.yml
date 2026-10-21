@@ -17,6 +17,9 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
+      - name: Install CPU torch
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+
       - name: Install dependencies
         run: pip install -e ".[dev]"
 
